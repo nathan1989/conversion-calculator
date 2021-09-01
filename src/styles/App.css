@@ -130,17 +130,21 @@ label,
 
 .button[disabled] {
   background-color: #5085f1;
-  font-size: 0;
-}
-
-.button[disabled]:before {
-  content: 'Getting your result...';
-  font-size: 14px;
   cursor: default;
 }
 
 .button:active {
   background-color: #214fad;
+}
+
+.button-small {
+  flex: 0 0 50px;
+  padding: 4px;
+  margin-bottom: 10px;
+}
+
+.button-small[disabled]{
+  visibility: hidden;
 }
 
 .results {
@@ -171,13 +175,12 @@ label,
 .notification {
   background: #c70000;
   color: white;
-  font-weight: bold;
+  font-weight: 600;
   padding: 10px 20px;
   position: fixed;
   top: 10px;
   right: 10px;
-  opacity: 1;
-  transition: opacity .2s ease-in;
+  border-radius: 5px;
 }
 
 .no-margin {

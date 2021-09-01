@@ -1,21 +1,9 @@
 import { useState } from 'react'
-import currenciesList from './currencies'
-import './App.css'
-
-const Dropdown = ({error, id, label, value, setValue}) => {
-  return (
-    <div className={`section ${error ? 'error' : ''}`}>
-      <label htmlFor={id}>{label || 'Currency to buy'}</label>
-      <select id={id} value={value} onChange={e => setValue(e.target.value)}>
-        <option disabled value="">Choose a currency</option>
-        {currenciesList.map(i => <option key={i.code} value={i.code}>{i.label}</option>)}
-      </select>
-      <span className="helper-text">{error || ''}</span>
-    </div>
-  )
-}
-
-const markUpFee = 0.005
+import Dropdown from './components/Dropdown'
+import Fetch from './api/Fetch'
+import { MARKUP_FEE, REFRESH_RATE } from './data/constants'
+import useInterval from './utils/useInterval'
+import './styles/App.css'
 
 const App = () => {
   const [updatedat, setupdatedat] = useState(new Date())
@@ -35,7 +23,7 @@ const App = () => {
   const [markup, setmarkup] = useState('')
 
   // misc
-  const [loading, setloading] = useState(false)
+  const [loading, setloading] = useState('')
   const [notification, setnotification] = useState('')
 
   const resetForm = () => {
@@ -46,49 +34,69 @@ const App = () => {
     setnotification('')
   }
 
-  const submit = () => () => {
+  const submit = (polling = false) => { // if polling, don't show errors and notifications
     let error = false
+
+    // check fields are valid
     if(amount === ''){
-      setamounterror('Please add an amount')
+      if(!polling) setamounterror('Please add an amount')
       error = true
     }
     if(isNaN(amount)){
-      setamounterror('Please use numbers only')
+      if(!polling) setamounterror('Please use numbers only')
       error = true
     }
     if(sellcurrency === ''){
-      setsellcurrencyerror('Please add an currency to sell')
+      if(!polling) setsellcurrencyerror('Please add an currency to send')
       error = true
     }
     if(buycurrency === ''){
-      setbuycurrencyerror('Please add an currency to buy')
+      if(!polling) setbuycurrencyerror('Please add an currency to recieve')
       error = true
     }
+
     if(!error){ // if no errors, proceed
-      setloading(true)
-      resetForm()
-      fetch(`https://wnvgqqihv6.execute-api.ap-southeast-2.amazonaws.com/Public/public/rates?Buy=${buycurrency}&Sell=${sellcurrency}&Amount=${amount}&Fixed=buy`)
-        .then(res => res.json())
-        .then(res => {
-          setloading(false)
-          if(res.midMarketRate){
-            const getRate = Number(res.midMarketRate)
-            const getResult = Number(amount * getRate)
-            setrate(getRate)
-            setresult(getResult.toFixed(2))
-            setourrate(getRate - markUpFee)
-            console.log(getResult)
-            console.log(getRate)
-            setmarkup(getResult * markUpFee)
-            setupdatedat(new Date())
-          } else {
+
+      if(polling){ // if polling, dont reset values
+        setloading('Refreshing...')
+      } else {
+        setloading('Getting your result...')
+        resetForm()
+      }
+
+      Fetch.get({ Buy: buycurrency, Sell: sellcurrency, Amount: amount, Fixed: 'buy' })
+      .then(res => {
+        setloading('')
+        if(res.midMarketRate){
+          const getRate = Number(res.midMarketRate)
+          const getResult = Number(amount * getRate)
+          setrate(getRate.toFixed(4))
+          setresult(getResult.toFixed(2))
+          setourrate((getRate - MARKUP_FEE).toFixed(2))
+          setmarkup((getResult * MARKUP_FEE).toFixed(4))
+          setupdatedat(new Date())
+        } else {
+          if(!polling){
             setnotification('Something went wrong, please try again later')
             setTimeout(() => {
               setnotification('')
             }, 3000)
           }
-        })
+        }
+      })
     }
+  }
+
+  // polls the API at a set interval to get the latest rates
+  useInterval(() => {
+    if(!loading){ // make sure the API is not already loading
+      submit(true)
+    }
+  }, REFRESH_RATE)
+
+  const swap = () => () => {
+    setsellcurrency(buycurrency)
+    setbuycurrency(sellcurrency)
   }
   
   return (
@@ -108,29 +116,38 @@ const App = () => {
             setamounterror('')
           }} 
           type="tel" 
+          disabled={loading}
         />
         <span className="helper-text">{amounterror || 'Please use numbers only'}</span>
       </div>
 
-      <div className="section">
+      <div>
         <h2>Currencies</h2>
         <div className="currencies">
           <Dropdown 
-            id="sell"
-            label="To sell"
+            id="send"
+            label="Send"
             value={sellcurrency}
             error={sellcurrencyerror}
+            disabled={loading}
             setValue={e => {
               setsellcurrency(e)
               setsellcurrencyerror('')
             }}
           />
 
+          <button 
+            disabled={!sellcurrency || !buycurrency || loading} 
+            className="button button-small"
+            onClick={swap()}
+          >Swap</button>
+
           <Dropdown 
-            id="buy"
-            label="To buy"
+            id="receive"
+            label="Recieve"
             value={buycurrency}
             error={buycurrencyerror}
+            disabled={loading}
             setValue={e => {
               setbuycurrency(e)
               setbuycurrencyerror('')
@@ -139,7 +156,7 @@ const App = () => {
         </div>
       </div>
       <div className="button-wrap">
-        <button onClick={submit()} disabled={loading} className="button">Get your result</button>
+        <button onClick={() => submit()} disabled={loading} className="button">{loading || 'Get your result'}</button>
       </div>
 
       <div className="results">
