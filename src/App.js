@@ -38,6 +38,14 @@ const App = () => {
   const [loading, setloading] = useState(false)
   const [notification, setnotification] = useState('')
 
+  const resetForm = () => {
+    setrate('')
+    setresult('')
+    setourrate('')
+    setmarkup('')
+    setnotification('')
+  }
+
   const submit = () => () => {
     let error = false
     if(amount === ''){
@@ -58,18 +66,20 @@ const App = () => {
     }
     if(!error){ // if no errors, proceed
       setloading(true)
-      setrate('')
-      setresult('')
-      setnotification('')
+      resetForm()
       fetch(`https://wnvgqqihv6.execute-api.ap-southeast-2.amazonaws.com/Public/public/rates?Buy=${buycurrency}&Sell=${sellcurrency}&Amount=${amount}&Fixed=buy`)
         .then(res => res.json())
         .then(res => {
           setloading(false)
           if(res.midMarketRate){
-            const getRate = res.midMarketRate
+            const getRate = Number(res.midMarketRate)
+            const getResult = Number(amount * getRate)
             setrate(getRate)
-            setresult(Number(amount * getRate).toFixed(2))
+            setresult(getResult.toFixed(2))
             setourrate(getRate - markUpFee)
+            console.log(getResult)
+            console.log(getRate)
+            setmarkup(getResult * markUpFee)
             setupdatedat(new Date())
           } else {
             setnotification('Something went wrong, please try again later')
@@ -133,7 +143,7 @@ const App = () => {
       </div>
 
       <div className="results">
-        {rate && <div className="result-section"><h3 className="result-heading">Your currency rate</h3> <span>{rate}</span></div>}
+        {rate && <div className="result-section"><h3 className="result-heading">Your rate</h3> <span>{rate}</span></div>}
         {result && <div className="result-section"><h3 className="result-heading">Your result</h3> <span>{result}</span></div>}
       </div>
 
