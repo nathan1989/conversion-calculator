@@ -6,8 +6,6 @@ import useInterval from './utils/useInterval'
 import './styles/App.css'
 
 const App = () => {
-  const [updatedat, setupdatedat] = useState(new Date())
-
   // fields
   const [amount, setamount] = useState('')
   const [amounterror, setamounterror] = useState('')
@@ -23,6 +21,7 @@ const App = () => {
   const [markup, setmarkup] = useState('')
 
   // misc
+  const [updatedat, setupdatedat] = useState(new Date())
   const [loading, setloading] = useState('')
   const [notification, setnotification] = useState('')
   const [hasresult, sethasresult] = useState(false)
