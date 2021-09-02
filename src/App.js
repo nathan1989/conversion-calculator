@@ -25,7 +25,7 @@ const App = () => {
   // misc
   const [loading, setloading] = useState('')
   const [notification, setnotification] = useState('')
-  const [formhaserror, setformhaserror] = useState(false)
+  const [hasresult, sethasresult] = useState(false)
 
   const resetForm = () => {
     setrate('')
@@ -69,7 +69,7 @@ const App = () => {
       .then(res => {
         setloading('')
         if(res.midMarketRate){
-          setformhaserror(false)
+          sethasresult(true)
           const getRate = Number(res.midMarketRate)
           const getResult = Number(amount * getRate)
           setrate(getRate.toFixed(4))
@@ -79,7 +79,7 @@ const App = () => {
           setupdatedat(new Date())
         } else {
           if(!polling){
-            setformhaserror(true)
+            sethasresult(false)
             setnotification('Something went wrong, please try again later')
             setTimeout(() => {
               setnotification('')
@@ -92,7 +92,7 @@ const App = () => {
 
   // polls the API at a set interval to get the latest rates
   useInterval(() => {
-    if(!loading && !formhaserror){ // make sure the API is not already loading and has had no previous errors
+    if(!loading && hasresult){ // make sure the API is not already loading and has previously had a result
       submit(true)
     }
   }, REFRESH_RATE)
