@@ -90,9 +90,16 @@ const App = () => {
     }
   }
 
+  // check if the page is visible
+  let visibilityState = document.visibilityState
+  document.addEventListener("visibilitychange", () => {
+    visibilityState = document.visibilityState
+  })
+
   // polls the API at a set interval to get the latest rates
   useInterval(() => {
-    if(!loading && hasresult){ // make sure the API is not already loading and has previously had a result
+    // make sure the page is visible, the API is not already loading and its previously had a result
+    if(visibilityState === 'visible' && !loading && hasresult){ 
       submit(true)
     }
   }, REFRESH_RATE)
